@@ -2,22 +2,20 @@
 var canvas = document.getElementById("gameCanvas");
 var context = canvas.getContext("2d");
 
+// create the keyboard object
+var keyboard = new Keyboard();
+// create the player
+var player = new Player();
+
 // Constant variables
 //----------------
-var KEY_SPACE = 32;
-var KEY_LEFT = 37;
-var KEY_UP = 38;
-var KEY_RIGHT = 39;
-var KEY_DOWN = 40;
-var KEY_A = 65;
-var KEY_S = 83;
-
 var SCREEN_WIDTH = canvas.width;
 var SCREEN_HEIGHT = canvas.height;
 
 var STATE_SPLASH = 0;
-var STATE_GAME = 1;
-var STATE_GAMEOVER = 2;
+var STATE_MENU = 1;
+var STATE_GAME = 2;
+var STATE_GAMEOVER = 3;
 
 var PLAYER_SPEED = 100;
 var PLAYER_TURN_SPEED = 1.6;
@@ -27,21 +25,21 @@ var ASTEROID_SPEED = 50;
 var ASTEROID_LIMIT = 20;
 //----------------
 
+
+
+player.position.Set(SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2);
 // Variables
 //----------------
+var font = "36px KenFuture";
+var white = "#fff";
+var black = "#000";
+var red = "#E55C5C"
+
 var score = 0;
 
 var spawnTimer = 0;
 var deltaTime = 0;
 var shootTimer = 0;
-
-var isSpaceKeyDown = false;
-var isUpKeyDown = false;
-var isDownKeyDown = false;
-var isLeftKeyDown = false;
-var isRightKeyDown = false;
-var isAKeyDown = false;
-var isSKeyDown = false;
 
 var gameState = STATE_SPLASH;
 
@@ -54,71 +52,6 @@ var asteroids = [];
 
 // create an array to hold all the bullets in our game
 var bullets = [];
-
-// create the player
-var player = 
-{
-	image: document.createElement("img"),
-	x: SCREEN_WIDTH/2, 
-	y: SCREEN_HEIGHT/2, 
-	width: 93, 
-	height: 80,
-	directionX: 0,
-	directionY: 0,
-	angularDirection: 0,
-	rotation: 0,
-	isDead: false,
-	resetX: SCREEN_WIDTH/2,
-	resetY: SCREEN_HEIGHT/2,
-	update: function()
-	{
-		if(player.isDead == false)
-		{
-			player.directionX = 0;
-			player.directionY = 0;
-			player.angularDirection = 0;
-			
-			if(isUpKeyDown)
-				player.directionY += 1;
-			if(isDownKeyDown)
-				player.directionY -= 1;
-			if(isAKeyDown)
-				player.directionX += 1;
-			if(isSKeyDown)
-				player.directionX -= 1;
-			if(isRightKeyDown)
-				player.angularDirection += 1;
-			if(isLeftKeyDown)
-				player.angularDirection -= 1;
-			
-			// calculate sin and cos for the player's current rotation
-			var s = Math.sin(player.rotation);
-			var c = Math.cos(player.rotation);
-			
-			var xDir = (player.directionX * c) - (player.directionY * s);
-			var yDir = (player.directionX * s) + (player.directionY * c);
-			var xVel = xDir * PLAYER_SPEED;
-			var yVel = yDir * PLAYER_SPEED;
-				
-			player.x += xVel * deltaTime;
-			player.y += yVel * deltaTime;
-				
-			player.rotation += player.angularDirection * PLAYER_TURN_SPEED * deltaTime;
-		}
-	},
-	draw: function ()
-	{
-		if(player.isDead == false)
-		{
-			context.save();			
-			context.translate(player.x, player.y);
-			context.rotate(player.rotation);
-			context.drawImage(player.image, 0 - player.width / 2, 0 - player.height / 2); 	
-			context.restore();
-		}
-	}
-};
-player.image.src = "ship.png";
 
 // load the texture that we will use to as a tiled backgrounds
 var background = {}
@@ -152,9 +85,6 @@ for(var y = 0; y < SCREEN_HEIGHT / background.height; y++)
 	}
 }
 //----------------
-
-window.addEventListener('keydown', function(evt) { onKeyDown(evt); }, false);
-window.addEventListener('keyup', function(evt) { onKeyUp(evt); }, false);
 
 // Functions
 //----------------
@@ -268,70 +198,6 @@ function playerShoot()
 	bullets.push(bullet);
 }
 
-function onKeyDown(event)
-{
-	if(event.keyCode == KEY_UP)
-	{
-		isUpKeyDown = true;
-	}
-	if(event.keyCode == KEY_DOWN)
-	{
-		isDownKeyDown = true;
-	}
-	if(event.keyCode == KEY_A)
-	{
-		isAKeyDown = true;
-	}
-	if(event.keyCode == KEY_S)
-	{
-		isSKeyDown = true;
-	}
-	if(event.keyCode == KEY_LEFT)
-	{
-		isLeftKeyDown = true;
-	}
-	if(event.keyCode == KEY_RIGHT)
-	{
-		isRightKeyDown = true;
-	}
-	if(event.keyCode == KEY_SPACE)
-	{
-		isSpaceKeyDown = true;
-	}
-}
-
-function onKeyUp(event)
-{
-	if(event.keyCode == KEY_UP)
-	{
-		isUpKeyDown = false;
-	}
-	if(event.keyCode == KEY_DOWN)
-	{
-		isDownKeyDown = false;
-	}	
-	if(event.keyCode == KEY_A)
-	{
-		isAKeyDown = false;
-	}
-	if(event.keyCode == KEY_S)
-	{
-		isSKeyDown = false;
-	}
-	if(event.keyCode == KEY_LEFT)
-	{
-		isLeftKeyDown = false;
-	}
-	if(event.keyCode == KEY_RIGHT)
-	{
-		isRightKeyDown = false;
-	}
-	if(event.keyCode == KEY_SPACE)
-	{
-		isSpaceKeyDown = false;
-	}
-}
-
 function intersects(x1, y1, w1, h1, x2, y2, w2, h2)
 {
 	if(	y2 + h2 < y1 ||
@@ -350,17 +216,31 @@ function runSplash(deltaTime)
 	splashTimer -= deltaTime;
 	if(splashTimer <= 0)
 	{
-		gameState = STATE_GAME;
+		gameState = STATE_MENU;
 		return;
 	}
 	
-	context.drawImage(splashImage.image, SCREEN_WIDTH/2 - splashImage.width / 2, SCREEN_HEIGHT/2 - splashImage.height/2);
+	//context.drawImage(splashImage.image, SCREEN_WIDTH/2 - splashImage.width / 2, SCREEN_HEIGHT/2 - splashImage.height/2);
 	
-	//context.font = "24px Arial";
-	//var textMeasure = context.measureText("ASTEROIDS");	// how wide will the text be?
-	//context.fillText("ASTEROIDS", canvas.width/2 - textMeasure.width/2, canvas.height/2);
-	//context.textBaseline="bottom";
-	//context.fillText("by Liz", 2, canvas.height - 2);
+	context.fillStyle = red;
+	context.font = font;
+	var textMeasure = context.measureText("ASTEROIDS");	// how wide will the text be?
+	context.fillText("ASTEROIDS", canvas.width/2 - textMeasure.width/2, canvas.height/2);
+}
+
+function runMenu(deltaTime)
+{
+	context.fillStyle = red;
+	context.font = font;
+	var message = "Press Enter to Play!";
+	var textMeasure = context.measureText(message);
+	context.fillText(message, canvas.width / 2 - textMeasure.width / 2, canvas.height / 2);
+	
+	if(keyboard.isKeyDown(keyboard.Enter))
+	{
+		gameState = STATE_GAME;
+		return;
+	}
 }
 
 function runGame(deltaTime)
@@ -380,7 +260,7 @@ function runGame(deltaTime)
 	}
 	
 	// if space is held and there has been enough time since the last time you shot
-	if(isSpaceKeyDown == true && shootTimer <= 0)
+	if(keyboard.isKeyDown(keyboard.Space) == true && shootTimer <= 0)
 	{
 		shootTimer += 0.3;
 		playerShoot();
@@ -418,7 +298,7 @@ function runGame(deltaTime)
 	}
 	
 	// Update the player
-	player.update();
+	player.Update(deltaTime);
 	
 	// check all the bullets to see if it has gone off of the screen
 	for(var i = 0; i < bullets.length; i++)
@@ -462,11 +342,11 @@ function runGame(deltaTime)
 	{
 		if(intersects(	asteroids[i].x - asteroids[i].width / 2, 	asteroids[i].y - asteroids[i].height / 2, 
 						asteroids[i].width, 						asteroids[i].height,
-						player.x - player.width / 2, 				player.y - player.height / 2,
+						player.position.x - player.width / 2, 		player.position.y - player.height / 2,
 						player.width, 								player.height) == true)
 		{
 			gameState = STATE_GAMEOVER;
-			isSpaceKeyDown = false;
+			keyboard.keys[keyboard.Space] = false;
 			var highScore = window.localStorage.getItem("highScore");
 			
 			console.log(highScore);
@@ -490,10 +370,10 @@ function runGame(deltaTime)
 	}
 	
 	// Draw the player
-	player.draw();
+	player.Draw();
 	
-	context.font = "24px Arial";
-	context.fillStyle = "#fff";
+	context.font = font;
+	context.fillStyle = red;
 	context.fillText("Score: " + score, 2, canvas.height - 2);
 }
 
@@ -511,22 +391,19 @@ function resetGame()
 function runGameOver(deltaTime)
 {
 	var highScore = window.localStorage.getItem("highScore");
-	var tm = context.measureText("High Score: " + highScore);	
-	context.fillStyle = "#fff"
-	context.fillText("High Score: " + highScore, SCREEN_WIDTH/2 - tm.width/2, SCREEN_HEIGHT/2 + 60);
+	var message = "High Score: " + highScore;
+	var tm = context.measureText(message);	
+	context.fillStyle = red;
+	context.fillText(message, SCREEN_WIDTH/2 - tm.width/2, SCREEN_HEIGHT/2 + 80);
 	
-	if(isSpaceKeyDown == true)
+	if(keyboard.isKeyDown(keyboard.Space) == true)
 	{
 		resetGame();
-		gameState = STATE_GAME;
+		gameState = STATE_MENU;
 		return;
 	}
 	
 	context.drawImage(gameOverImage.image, SCREEN_WIDTH/2 - gameOverImage.width/2, SCREEN_HEIGHT/2 - gameOverImage.height/2);
-	
-	//context.font = "24px Arial";
-	//var textMeasure = context.measureText("GAME OVER");	// how wide will the text be?
-	//context.fillText("GAME OVER", canvas.width/2 - textMeasure.width/2, canvas.height/2);
 }
 
 function run()
@@ -547,6 +424,9 @@ function run()
 	{
 		case STATE_SPLASH:
 			runSplash(deltaTime);
+			break;
+		case STATE_MENU:
+			runMenu(deltaTime);
 			break;
 		case STATE_GAME:
 			runGame(deltaTime);
