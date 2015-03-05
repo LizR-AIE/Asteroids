@@ -25,9 +25,8 @@ var ASTEROID_SPEED = 50;
 var ASTEROID_LIMIT = 20;
 //----------------
 
-
-
 player.position.Set(SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2);
+
 // Variables
 //----------------
 var font = "36px KenFuture";
@@ -167,8 +166,8 @@ function playerShoot()
 	var bullet = 
 	{
 		image: document.createElement("img"),
-		x: player.x,
-		y: player.y,
+		x: player.position.x,
+		y: player.position.y,
 		width: 5,
 		height: 5,
 		velocityX: 0,
@@ -374,7 +373,7 @@ function runGame(deltaTime)
 	
 	context.font = font;
 	context.fillStyle = red;
-	context.fillText("Score: " + score, 2, canvas.height - 2);
+	context.fillText("Score: " + score, 2, SCREEN_HEIGHT - 2);
 }
 
 function resetGame()
@@ -382,8 +381,8 @@ function resetGame()
 	player.isDead = false;
 	asteroids = []
 	bullets = []
-	player.x = player.resetX;
-	player.y = player.resetY;
+	player.position.x = player.resetPosition.resetX;
+	player.position.y = player.resetPosition.resetY;
 	player.rotation = 0;
 	score = 0;
 }
